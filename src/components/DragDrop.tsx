@@ -1,31 +1,31 @@
-"use client";
+"use client"
 
-import { MLProvider, useML } from "@/context/MLContext";
-import { Sidebar } from "@/components/Sidebar";
-import { ProgressSteps } from "@/components/ProgressSteps";
-import { LoadingAndError } from "@/components/LoadingAndError";
-import { UploadStep } from "@/components/steps/UploadStep";
-import { PreprocessStep } from "@/components/steps/PreProcessStep";
-import { TrainStep } from "@/components/steps/TrainStep";
-import { VisualizeStep } from "@/components/steps/VisualizeStep";
-import { DatasetSummary } from "@/components/DatasetSummary";
-// import { useML } from "@/context/MLContext";
+import { MLProvider } from "@/context/MLContext"
+import { useML } from "@/context/MLContext"
+import { Sidebar } from "@/components/Sidebar"
+import { ProgressSteps } from "@/components/ProgressSteps"
+import { LoadingAndError } from "@/components/LoadingAndError"
+import { UploadStep } from "@/components/steps/UploadStep"
+import { PreprocessStep } from "@/components/steps/PreProcessStep"
+import { TrainStep } from "@/components/steps/TrainStep"
+import { VisualizeStep } from "@/components/steps/VisualizeStep"
+import { DatasetSummary } from "@/components/DatasetSummary"
 
 // This component renders the active step based on the current state
 function ActiveStep() {
-  const { activeStep } = useML();
+  const { activeStep } = useML()
 
   switch (activeStep) {
     case "upload":
-      return <UploadStep />;
+      return <UploadStep />
     case "preprocess":
-      return <PreprocessStep />;
+      return <PreprocessStep />
     case "train":
-      return <TrainStep />;
+      return <TrainStep />
     case "visualize":
-      return <VisualizeStep />;
+      return <VisualizeStep />
     default:
-      return <UploadStep />;
+      return <UploadStep />
   }
 }
 
@@ -40,7 +40,7 @@ function MainContent() {
         <DatasetSummary />
       </div>
     </div>
-  );
+  )
 }
 
 // Mobile header component
@@ -49,7 +49,7 @@ function MobileHeader() {
     <div className="lg:hidden bg-primary text-primary-foreground p-4">
       <h1 className="text-xl font-bold">ML Platform</h1>
     </div>
-  );
+  )
 }
 
 // Main DragDrop component
@@ -62,5 +62,6 @@ export default function DragDrop() {
         <MainContent />
       </div>
     </MLProvider>
-  );
+  )
 }
+

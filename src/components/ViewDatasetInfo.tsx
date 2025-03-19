@@ -10,7 +10,7 @@ export function ViewDatasetInfo() {
   const { summaries, activeStep } = useML()
   const [isOpen, setIsOpen] = useState(false)
 
-  if (Object.keys(summaries).length === 0 || activeStep === "upload") {
+  if (Object.keys(summaries).length === 0) {
     return null
   }
 
@@ -38,6 +38,7 @@ export function ViewDatasetInfo() {
                           <th className="text-left py-2 px-3 font-medium">Column Name</th>
                           <th className="text-left py-2 px-3 font-medium">Data Type</th>
                           <th className="text-left py-2 px-3 font-medium">Missing Values</th>
+                          <th className="text-left py-2 px-3 font-medium">Unique Values</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -46,6 +47,11 @@ export function ViewDatasetInfo() {
                             <td className="py-2 px-3">{column}</td>
                             <td className="py-2 px-3">{summary.summary.data_types[column]}</td>
                             <td className="py-2 px-3">{summary.summary.missing_values[column] || 0}</td>
+                            <td className="py-2 px-3">
+                              {summary.summary.unique_values && summary.summary.unique_values[column]
+                                ? summary.summary.unique_values[column]
+                                : "N/A"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

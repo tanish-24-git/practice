@@ -1,4 +1,3 @@
-// Update the API service to include the target column parameter for preprocessing
 import axios from "axios"
 
 const API_BASE_URL = "http://127.0.0.1:8000"
@@ -37,6 +36,7 @@ const uploadFiles = async (files: File[], onProgress: (progress: number) => void
     return response.data
   } catch (error) {
     handleError(error)
+    return {} // Add this to prevent TypeScript error
   }
 }
 
@@ -71,6 +71,7 @@ const preprocessData = async (
     return response.data
   } catch (error) {
     handleError(error)
+    return {} // Add this to prevent TypeScript error
   }
 }
 
@@ -99,6 +100,7 @@ const trainModel = async (
     return response.data
   } catch (error) {
     handleError(error)
+    return {} // Add this to prevent TypeScript error
   }
 }
 
