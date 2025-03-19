@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 @app.post("/upload")
-async def upload_file(files: list[UploadFile] = File(...)):  # Changed to accept multiple files
+async def upload_file(files: list[UploadFile] = File(...)):
     try:
         results = {}
         os.makedirs("uploads", exist_ok=True)
@@ -34,7 +34,12 @@ async def upload_file(files: list[UploadFile] = File(...)):  # Changed to accept
                 "columns": list(df.columns),
                 "rows": len(df),
                 "data_types": df.dtypes.astype(str).to_dict(),
-                "missing_values": df.isnull().sum().to_dict()
+                "missing_values": df.isnull().sum().to_dict(),
+                "unique_values": {col: df[col].nunique() for col in df.columns},  # Added unique value counts
+                "stats": {
+                    col: df[col].describe().to_dict() 
+                    for col in df.select_dtypes(include=['float64', 'int64']).columns  # Descriptive stats for numeric columns
+                }
             }
             insights_data = get_dataset_insights(summary, df)
             suggested_missing_strategy = suggest_missing_strategy(df)
@@ -53,15 +58,13 @@ async def upload_file(files: list[UploadFile] = File(...)):  # Changed to accept
         print(f"Error in /upload endpoint: {str(e)}")
         return JSONResponse(content={"error": f"Upload failed: {str(e)}"}, status_code=500)
 
-# ... (previous imports and code remain unchanged)
-
 @app.post("/preprocess")
 async def preprocess_endpoint(
     files: list[UploadFile] = File(...),
     missing_strategy: str = Form(...),
     scaling: bool = Form(...),
     encoding: str = Form(...),
-    target_column: str = Form(None)  # Add target_column as an optional parameter
+    target_column: str = Form(None)  # Optional target column
 ):
     try:
         results = {}
@@ -72,6 +75,10 @@ async def preprocess_endpoint(
                 f.write(await file.read())
             
             df = pd.read_csv(file_location)
+            # Validate encoding and target_column compatibility
+            if encoding in ["target", "kfold"] and (not target_column or target_column not in df.columns):
+                raise ValueError(f"Target column '{target_column}' is required and must exist in the dataset for {encoding} encoding")
+            
             df_processed = preprocess_data(df, missing_strategy=missing_strategy, scaling=scaling, encoding=encoding, target_column=target_column)
             preprocessed_file = save_preprocessed_data(df_processed, filename=f"preprocessed_{file.filename}")
             results[file.filename] = {"preprocessed_file": preprocessed_file}
@@ -79,8 +86,6 @@ async def preprocess_endpoint(
     except Exception as e:
         print(f"Error in /preprocess endpoint: {str(e)}")
         return JSONResponse(content={"error": f"Preprocessing failed: {str(e)}"}, status_code=500)
-
-# ... (rest of the file remains unchanged)
 
 @app.post("/train")
 async def train_model_endpoint(

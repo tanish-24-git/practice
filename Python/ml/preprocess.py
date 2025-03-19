@@ -1,3 +1,4 @@
+# Python/ml/preprocess.py
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
@@ -47,7 +48,7 @@ def preprocess_data(df, missing_strategy='mean', scaling=True, encoding='onehot'
     try:
         df_processed = df.copy()
         
-        # Handle missing values (unchanged)
+        # Handle missing values
         print(f"Handling missing values with strategy: {missing_strategy}")
         if missing_strategy == 'mean':
             numeric_cols = df_processed.select_dtypes(include=[np.number]).columns
@@ -67,6 +68,13 @@ def preprocess_data(df, missing_strategy='mean', scaling=True, encoding='onehot'
         numeric_cols = df_processed.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df_processed.select_dtypes(include=['object', 'category']).columns.tolist()
 
+        # Remove target_column from features if provided (for supervised tasks)
+        if target_column and target_column in df_processed.columns:
+            if target_column in numeric_cols:
+                numeric_cols.remove(target_column)
+            elif target_column in categorical_cols:
+                categorical_cols.remove(target_column)
+
         print(f"Numeric columns: {numeric_cols}")
         print(f"Categorical columns: {categorical_cols}")
 
@@ -81,27 +89,31 @@ def preprocess_data(df, missing_strategy='mean', scaling=True, encoding='onehot'
             if encoding == 'onehot':
                 transformers.append(('cat', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'), categorical_cols))
             elif encoding == 'label':
+                # Apply Label Encoding to each categorical column
                 for col in categorical_cols:
                     le = LabelEncoder()
                     df_processed[col] = le.fit_transform(df_processed[col].astype(str))
                 transformers.append(('cat', 'passthrough', categorical_cols))
             elif encoding == 'target' and target_column and target_column in df_processed.columns:
-                # Apply target encoding
+                # Apply Target Encoding
                 for col in categorical_cols:
                     df_processed[col] = target_encode(df_processed, col, target_column)
                 transformers.append(('cat', 'passthrough', categorical_cols))
             elif encoding == 'kfold' and target_column and target_column in df_processed.columns:
-                # Apply K-Fold target encoding
+                # Apply K-Fold Target Encoding
                 for col in categorical_cols:
                     df_processed = kfold_target_encode(df_processed, col, target_column)
                 transformers.append(('cat', 'passthrough', categorical_cols))
             else:
-                # Fallback to onehot if target_column is not provided for target/kfold encoding
-                print(f"Warning: Target column required for {encoding} encoding but not provided. Falling back to one-hot encoding.")
+                # Fallback to onehot if target_column is not provided or invalid encoding
+                print(f"Warning: Invalid encoding '{encoding}' or missing target column. Falling back to one-hot encoding.")
                 transformers.append(('cat', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'), categorical_cols))
 
         if not transformers:
             print("No columns to preprocess after handling missing values")
+            # Ensure target column is preserved if provided
+            if target_column and target_column in df.columns:
+                return df_processed[[target_column] + [col for col in df_processed.columns if col != target_column]]
             return df_processed
 
         preprocessor = ColumnTransformer(transformers=transformers, remainder='passthrough')
@@ -117,6 +129,12 @@ def preprocess_data(df, missing_strategy='mean', scaling=True, encoding='onehot'
             else:
                 feature_names.extend(cols)
         
+        # If target_column exists, ensure it's included in the output
+        if target_column and target_column in df.columns:
+            target_data = df_processed[[target_column]].values
+            transformed_data = np.hstack((transformed_data, target_data))
+            feature_names.append(target_column)
+
         df_processed = pd.DataFrame(transformed_data, columns=feature_names)
         return df_processed
     except Exception as e:
@@ -124,7 +142,6 @@ def preprocess_data(df, missing_strategy='mean', scaling=True, encoding='onehot'
         raise
 
 def save_preprocessed_data(df, filename="preprocessed_data.csv"):
-    # Existing code remains unchanged
     try:
         file_path = f"uploads/{filename}"
         df.to_csv(file_path, index=False)
